@@ -102,8 +102,9 @@ Instead of `equal-to` you can use `contains`:
 
 For more details on request matching, see the documentation for WireMock.
 
-Run the project's CI pipeline and build a JAR (this will fail until you edit the
-tests to pass):
+## Building
+
+Run the project's CI pipeline and build a JAR:
 
     $ clojure -T:build ci
 
@@ -120,7 +121,7 @@ variables (requires the `ci` task be run first):
 
     $ clojure -T:build deploy
 
-Your library will be deployed to net.clojars.johnswanson/mock_server on clojars.org by default.
+Your library will be deployed to net.clojars.jds02006/mock_server on clojars.org by default.
 
 ## License
 
