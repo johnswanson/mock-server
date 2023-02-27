@@ -20,9 +20,6 @@ external API:
 
 etc.
 
-This is a wrapper around the Java library WireMock, with a more declarative
-interface.
-
 ## Usage
 
 deps.edn:
@@ -37,109 +34,49 @@ leiningen:
 [net.clojars.jds02006/mock_server "0.1.0-SNAPSHOT"]
 ```
 
-
-The basic flow:
-
-``` clojure
-(require '[johnswanson.mock-server :as mock :refer [with-mock-server with-expect])
-
-;; launch the mock HTTP server
-(with-mock-server
-  ;; set up the expectations that must be met. In this case, we must receive an
-  ;; HTTP request to the url "/foo". Any method and content is allowed.
-  ;;
-  ;; If no matching HTTP request is made, OR if non-matching HTTP requests are
-  ;; made, throw an exception
-  (with-expect {:request {:url "/foo"}} 
-    ;; do something that makes an HTTP request to `(mock/url "/foo")`
-    (http/get (mock/url "/foo"))))
-```
-
-You can specify the method:
+Usage is pretty simple. First require the namespace:
 
 ``` clojure
-(with-expect {:request {:url "/foo"
-                        :method "GET"}}
-  ;; ...)
-```
-
-You can specify that repeated requests must be made:
-``` clojure
-(with-expect {:request {:url "/foo"
-                        :method "GET"}
-              :response {:status 200
-                         :count 2}}
-  ;; ...)
-```
-
-You can also specify `responses` instead of `response`, and pass a collection of responses.
-``` clojure
-(with-expect {:request {:url "/foo"
-                        :method "GET"}
-              :responses [{:status 200} {:status 500}]}
-  ;; make 2 requests, the second will fail with a 500 error
-  ;; ...)
-```
-
-You can delay the response:
-
-``` clojure
-(mock/with-expect {:request {:url "/foo"}
-                   :response {:status 500
-                              :fixed-delay-milliseconds (* 1000 180)}}
-  ;; ...)
+(require '[johnswanson.mock-server :as mock :refer [with-mock-server with-requests with-handler]])
 
 ```
 
-You can go wild and combine the two options... though maybe you shouldn't?
+You can use `with-mock-server` to launch the mock server. (You can also launch
+it manually with `start-server!`, in which case you'll need to manually shut it
+down with `stop-server!`.)
 
-``` clojure
-(with-expect {:request {:url "/foo"
-                        :method "GET"}
-              :responses [{:status 200 :count 3} {:status 500}]}
-  ;; make 4 requests total, the last one will return a 500 error
-  ;; ...)
+```clojure
+
+;; launch the mock HTTP server. By default, it just returns a 200 status and no body
+(with-mock-server server
+  (is (= 200 (:status (http/get (mock/url server))))))
 ```
 
-### More complex matching
-
-You can be more specific about what kinds of requests should be expected. You can pass:
-
-#### Headers
-
-You can pass headers like so:
+If you want to inspect the requests your application has made to the server, you
+can use `with-requests` to collect requests into a vector:
 
 ``` clojure
-:headers {"header-name" {:matches "header-value"}}
+(with-mock-server server
+  (with-requests requests
+    (http/get (mock/url server))
+    (is (= :get (:request-method (first @requests))))))
 ```
 
-Any request that matches will get the response you specified. Otherwise the
-expectation will fail.
-
-#### Body patterns
-
-You can match against the raw body of the HTTP request:
+Finally, if you want to change the behavior of the HTTP server (e.g. return 500
+errors, or induce timeouts with a long sleep), you can do that as well! Just use
+`with-handler`:
 
 ``` clojure
-:body-patterns [{:equal-to "raw body"}]
+(with-mock-server server
+  (with-handler (fn [_req]
+                  (Thread/sleep 10000)
+                  {:status 404})
+    ;; this will take 10 seconds!
+    (is (= 404 (:status (http/get (mock/url server)))))))
 ```
 
-Or the JSON decoded body (use strings for keys, rather than keywords - otherwise
-`mock-server` may change the casing!):
-
-``` clojure
-:body-patterns [{:equal-to-json {"some_key" "value"}}]
-```
-
-You can also expect based on the raw bytes or XML-decoded body!
-
-Instead of `equal-to` you can use `contains`:
-
-``` clojure
-:body-patterns [{:contains "some text"}]
-```
-
-For more details on request matching, see the documentation for WireMock.
+You've probably figured it out by now, but `mock/url` is a function returning
+the URL for the mock server - probably something like "http://localhost:61022".
 
 ## Building
 

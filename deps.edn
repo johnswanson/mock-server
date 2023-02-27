@@ -1,9 +1,6 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        metosin/jsonista {:mvn/version "0.2.6"}
-        clj-http/clj-http {:mvn/version "3.12.3"}
-        com.github.tomakehurst/wiremock-jre8 {:mvn/version "2.35.0"}
-        camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.0"}}
+        http-kit/http-kit {:mvn/version "2.6.0"}}
  :aliases
  {:test
   {:extra-paths ["test"]
